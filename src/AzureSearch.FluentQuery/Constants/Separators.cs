@@ -8,5 +8,4 @@ internal static class Separators
     public const string CloseParenthesis = ")";
     public const string ArrowFunction = "=>";
     public const string Slash = "/";
-
 }

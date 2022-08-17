@@ -7,11 +7,8 @@ using Constants;
 
 public class AzureSearchVisitor : ExpressionVisitor
 {
-    private readonly StringBuilder _queryBuilder = new StringBuilder();
+    private readonly StringBuilder _queryBuilder = new();
     private readonly Expression _expression;
-
-    public AzureSearchVisitor(Expression expression)
-        => _expression = expression;
 
     public AzureSearchVisitor()
         => _expression = Expression.Empty();
@@ -43,7 +40,6 @@ public class AzureSearchVisitor : ExpressionVisitor
 
     private void Out(string? value)
         => _queryBuilder.Append(value);
-
 
     private void Nested(Action nestedAction)
     {
@@ -107,26 +103,26 @@ public class AzureSearchVisitor : ExpressionVisitor
             {
                 FieldInfo fieldInfo => fieldInfo!.GetValue(container)!,
                 PropertyInfo propertyInfo => propertyInfo!.GetValue(container, null)!,
-                _ => throw new ArgumentOutOfRangeException()
+                _ => throw new ArgumentOutOfRangeException(node?.Member?.Name)
             };
 
             Visit(Expression.Constant(value));
         }
-        else if (node.Expression is null && node.Member is MemberInfo memberInfo)
+        else if (node.Expression is null && node.Member is MemberInfo)
         {
             var compiledObject = Expression.Lambda(node).Compile();
-            var value = compiledObject switch
+            object value = compiledObject switch
             {
-                Func<DateTime> dateTimeFunc => dateTimeFunc() as object,
-                Func<DateTimeOffset> dateTimeOffsetFunc => dateTimeOffsetFunc() as object,
-                _ => throw new ArgumentOutOfRangeException()
+                Func<DateTime> dateTimeFunc => dateTimeFunc(),
+                Func<DateTimeOffset> dateTimeOffsetFunc => dateTimeOffsetFunc(),
+                _ => throw new ArgumentOutOfRangeException(compiledObject?.Method.Name)
             };
 
             Visit(Expression.Constant(value));
         }
         else
         {
-            Out(node.Member.Name!);
+            Out(node.Member.Name);
         }
 
         return node;
@@ -141,9 +137,9 @@ public class AzureSearchVisitor : ExpressionVisitor
             double doubleValue => $"{doubleValue}",
             long longValue => $"{longValue}",
             bool boolValue => $"{boolValue}".ToLower(),
-            DateTime dateTime => dateTime.ToString("O"),
-            DateTimeOffset dateTimeOffset => dateTimeOffset.ToString("O"),
-            _ => throw new ArgumentOutOfRangeException()
+            DateTime dateTime => $"{dateTime:O}",
+            DateTimeOffset dateTimeOffset => $"{dateTimeOffset:O}",
+            _ => AzureSearchSyntax.Null
         });
 
         return node;
@@ -217,20 +213,33 @@ public class AzureSearchVisitor : ExpressionVisitor
     {
         if (node.NodeType == ExpressionType.Call)
         {
-            Visit(node.Object);
-
-            var equalsMethodCall = node.Method.Name.Equals(nameof(Equals));
-            if (equalsMethodCall)
+            if (node.Method.Name.Equals(nameof(Equals)))
             {
-                Out(Separators.Space);
+                Visit(node.Object);
 
+                Out(Separators.Space);
                 Out(node.Method.Name switch
                 {
                     nameof(Equals) => AzureSearchSyntax.Equal,
-                    _ => throw new ArgumentOutOfRangeException()
+                    _ => throw new ArgumentOutOfRangeException(node.Method.Name)
                 });
-
                 Out(Separators.Space);
+            }
+
+            if (node.Method.DeclaringType == typeof(DateTime))
+            {
+                var dateTimeFunc = Expression.Lambda<Func<DateTime>>(node).Compile();
+                var dateValue = dateTimeFunc();
+                Visit(Expression.Constant(dateValue));
+                return node;
+            }
+
+            if (node.Method.DeclaringType == typeof(DateTimeOffset))
+            {
+                var dateTimeOffsetFunc = Expression.Lambda<Func<DateTimeOffset>>(node).Compile();
+                var dateValue = dateTimeOffsetFunc();
+                Visit(Expression.Constant(dateValue));
+                return node;
             }
         }
 
@@ -245,9 +254,9 @@ public class AzureSearchVisitor : ExpressionVisitor
             Out(Separators.Slash);
             Out(node.Method.Name switch
             {
-                nameof(System.Linq.Enumerable.Any) => AzureSearchSyntax.Any,
-                nameof(System.Linq.Enumerable.All) => AzureSearchSyntax.All,
-                _ => throw new ArgumentOutOfRangeException()
+                nameof(Enumerable.Any) => AzureSearchSyntax.Any,
+                nameof(Enumerable.All) => AzureSearchSyntax.All,
+                _ => throw new ArgumentOutOfRangeException(node.Method.Name)
             });
         }
 
@@ -266,7 +275,6 @@ public class AzureSearchVisitor : ExpressionVisitor
                 {
                     Out(Separators.Comma);
                     Out(Separators.Space);
-
                 }
 
                 Visit(node.Arguments[i]);
