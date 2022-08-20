@@ -33,4 +33,37 @@ public static class EnumerableExtensions
 
         return searchValues.Any(x => x?.Equals(source) ?? false);
     }
+
+    public static bool SearchIsMatch<TSource>(string search)
+    {
+        return SearchIsMatch<TSource>(
+            search,
+            Array.Empty<Func<TSource, object>>());
+    }
+
+    public static bool SearchIsMatch<TSource>(string search, params Func<TSource, object>[] searchFields)
+    {
+        return SearchIsMatch<TSource>(search, searchFields, QueryType.Simple);
+    }
+
+    public static bool SearchIsMatch<TSource>(
+        string search,
+        Func<TSource, object>[] searchFields,
+        QueryType queryType = QueryType.Simple)
+    {
+        return SearchIsMatch<TSource>(
+            search,
+            searchFields,
+            queryType,
+            SearchMode.Any);
+    }
+
+    public static bool SearchIsMatch<TSource>(
+        string search,
+        Func<TSource, object>[] searchFields,
+        QueryType queryType = QueryType.Simple,
+        SearchMode searchMode = SearchMode.Any)
+    {
+        return true;
+    }
 }

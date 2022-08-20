@@ -140,6 +140,7 @@ public class AzureSearchVisitor : ExpressionVisitor
             bool boolValue => $"{boolValue}".ToLower(),
             DateTime dateTime => $"{dateTime:O}",
             DateTimeOffset dateTimeOffset => $"{dateTimeOffset:O}",
+            Enum enumValue => $"'{enumValue}'",
             _ => AzureSearchSyntax.Null
         });
 
@@ -214,17 +215,32 @@ public class AzureSearchVisitor : ExpressionVisitor
     {
         Out("'");
 
-        var values = node.Expressions
-            .Select(item => {
+        var values = new List<object>();
 
-                return item is ConstantExpression constantExpression
-                    ? constantExpression!.Value
-                    : null;
-            })
-            .Where(x => x is not null)
-            .ToArray();
+        foreach (var item in node.Expressions)
+        {
+            if (item is ConstantExpression constantExpression)
+            {
+                values.Add(constantExpression.Value!);
+                continue;
+            }
 
-            Out(string.Join(Separators.Comma + Separators.Space, values));
+            if (item is LambdaExpression lambdaExpression)
+            {
+                if (lambdaExpression.Body is MemberExpression lMExpression)
+                {
+                    values.Add(lMExpression.Member.Name!);
+                    continue;
+                }
+
+                if (lambdaExpression.Body is UnaryExpression uMExpression && uMExpression.Operand is MemberExpression ulMExpression)
+                {
+                    values.Add(ulMExpression.Member!.Name!);
+                    continue;
+                }
+            }
+        }
+        Out(string.Join(Separators.Comma + Separators.Space, values));
         Out("'");
         return node;
     }
@@ -275,6 +291,45 @@ public class AzureSearchVisitor : ExpressionVisitor
                 Out(Separators.Comma);
                 Out(Separators.Space);
                 Visit(compareArg);
+
+                Out(Separators.CloseParenthesis);
+                return node;
+            }
+
+            if (node.Method.Name.Equals(nameof(EnumerableExtensions.SearchIsMatch)))
+            {
+                Out(AzureSearchSyntax.SearchIsMatch);
+                Out(Separators.OpenParenthesis);
+
+                var searchArg = node.Arguments.FirstOrDefault();
+
+                Visit(searchArg);
+
+                if (node.Arguments.Count > 1)
+                {
+                    Out(Separators.Comma);
+                    Out(Separators.Space);
+
+                    var searchFields = node.Arguments.Skip(1).FirstOrDefault();
+                    var queryType = node.Arguments.Skip(2).FirstOrDefault();
+                    var searchMode = node.Arguments.Skip(3).FirstOrDefault();
+
+                    Visit(searchFields);
+
+                    if (queryType is not null)
+                    {
+                        Out(Separators.Comma);
+                        Out(Separators.Space);
+                        Visit(queryType);
+                    }
+
+                    if (searchMode is not null)
+                    {
+                        Out(Separators.Comma);
+                        Out(Separators.Space);
+                        Visit(searchMode);
+                    }
+                }
 
                 Out(Separators.CloseParenthesis);
                 return node;
