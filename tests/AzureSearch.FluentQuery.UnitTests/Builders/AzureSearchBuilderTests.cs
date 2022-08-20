@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using AzureSearch.FluentQuery.Builders;
 using AzureSearch.FluentQuery.Constants;
+using AzureSearch.FluentQuery.Extensions;
 using AzureSearch.FluentQuery.Models;
 using AzureSearch.FluentQuery.UnitTests.Models;
 using Shouldly;
@@ -25,7 +26,7 @@ public class AzureSearchBuilderTests : IClassFixture<AzureSearchBuilder<ExampleT
         }
 
         [Fact]
-        public void Should_EqualsCall_Return_StringValue()
+        public void Should_Return_EqualsQuery_When_EqualsCall()
         {
             var result = _azureSearchBuilder.Query(model => model.Name.Equals("Example Name")).Build();
             result.ShouldSatisfyAllConditions(nameof(AzureSearchBuilderTests),
@@ -34,7 +35,7 @@ public class AzureSearchBuilderTests : IClassFixture<AzureSearchBuilder<ExampleT
         }
 
         [Fact]
-        public void Should_EqualsOperator_Return_StringValue()
+        public void Should_Return_EqualsQuery_When_OperatorCall()
         {
             var result = _azureSearchBuilder.Query(model => model.Name == "Example Name").Build();
             result.ShouldSatisfyAllConditions(nameof(AzureSearchBuilderTests),
@@ -43,7 +44,7 @@ public class AzureSearchBuilderTests : IClassFixture<AzureSearchBuilder<ExampleT
         }
 
         [Fact]
-        public void Should_NotEqualsOperator_Return_StringValue()
+        public void Should_Return_NotEqualsQuery_When_OperatorCall()
         {
             var result = _azureSearchBuilder.Query(model => model.Name != "Example Name").Build();
             result.ShouldSatisfyAllConditions(nameof(AzureSearchBuilderTests),
@@ -52,7 +53,7 @@ public class AzureSearchBuilderTests : IClassFixture<AzureSearchBuilder<ExampleT
         }
 
         [Fact]
-        public void Should_EqualsOperator_Return_Null()
+        public void Should_Return_EqualsQuery_When_NullComparison()
         {
             var result = _azureSearchBuilder.Query(model => model.Name == null).Build();
             result.ShouldSatisfyAllConditions(nameof(AzureSearchBuilderTests),
@@ -61,7 +62,7 @@ public class AzureSearchBuilderTests : IClassFixture<AzureSearchBuilder<ExampleT
         }
 
         [Fact]
-        public void Should_NotEqualsOperator_Return_Null()
+        public void Should_Return_NotEqualsQuery_When_NullComparison()
         {
             var result = _azureSearchBuilder.Query(model => model.Name != null).Build();
             result.ShouldSatisfyAllConditions(nameof(AzureSearchBuilderTests),
@@ -70,7 +71,7 @@ public class AzureSearchBuilderTests : IClassFixture<AzureSearchBuilder<ExampleT
         }
 
         [Fact]
-        public void Should_NotWrap_Condition()
+        public void Should_Return_Query_With_WrappedNotOperator()
         {
             var result = _azureSearchBuilder.Query(model => !(model.Name == null)).Build();
             result.ShouldSatisfyAllConditions(nameof(AzureSearchBuilderTests),
@@ -86,7 +87,7 @@ public class AzureSearchBuilderTests : IClassFixture<AzureSearchBuilder<ExampleT
         }
 
         [Fact]
-        public void Should_EqualsCall_Return_IntValue()
+        public void Should_Return_EqualsQuery_When_EqualsCall()
         {
             var result = _azureSearchBuilder.Query(model => model.Number.Equals(2)).Build();
             result.ShouldSatisfyAllConditions(nameof(AzureSearchBuilderTests),
@@ -95,7 +96,7 @@ public class AzureSearchBuilderTests : IClassFixture<AzureSearchBuilder<ExampleT
         }
 
         [Fact]
-        public void Should_EqualsOperator_Return_IntValue()
+        public void Should_Return_EqualsQuery_When_OperatorCall()
         {
             var result = _azureSearchBuilder.Query(model => model.Number == 2).Build();
             result.ShouldSatisfyAllConditions(nameof(AzureSearchBuilderTests),
@@ -104,7 +105,7 @@ public class AzureSearchBuilderTests : IClassFixture<AzureSearchBuilder<ExampleT
         }
 
         [Fact]
-        public void Should_NotEqualsOperator_Return_IntValue()
+        public void Should_Return_NotEqualsQuery_When_OperatorCall()
         {
             var result = _azureSearchBuilder.Query(model => model.Number != 2).Build();
             result.ShouldSatisfyAllConditions(nameof(AzureSearchBuilderTests),
@@ -120,7 +121,7 @@ public class AzureSearchBuilderTests : IClassFixture<AzureSearchBuilder<ExampleT
         }
 
         [Fact]
-        public void Should_Call_Any()
+        public void Should_Return_AnyQuery()
         {
             var result = _azureSearchBuilder.Query(model => model.Tags.Any(x => x != "Example Tag")).Build();
             result.ShouldSatisfyAllConditions(nameof(AzureSearchBuilderTests),
@@ -129,12 +130,30 @@ public class AzureSearchBuilderTests : IClassFixture<AzureSearchBuilder<ExampleT
         }
 
         [Fact]
-        public void Should_Call_All()
+        public void Should_Return_AnyQuery_With_WrappedNotOperator()
+        {
+            var result = _azureSearchBuilder.Query(model => !model.Tags.Any(x => x != "Example Tag")).Build();
+            result.ShouldSatisfyAllConditions(nameof(AzureSearchBuilderTests),
+                () => result.Filters.ShouldNotBeNull(),
+                () => result.Filters.ShouldBe($"{AzureSearchSyntax.Not} ({nameof(ExampleTestModel.Tags)}/{AzureSearchSyntax.Any}(x {Separators.ArrowFunction} x {AzureSearchSyntax.NotEqual} 'Example Tag'))"));
+        }
+
+        [Fact]
+        public void Should_Return_AllQuery()
         {
             var result = _azureSearchBuilder.Query(model => model.Tags.All(x => x != "Example Tag")).Build();
             result.ShouldSatisfyAllConditions(nameof(AzureSearchBuilderTests),
                 () => result.Filters.ShouldNotBeNull(),
                 () => result.Filters.ShouldBe($"{nameof(ExampleTestModel.Tags)}/{AzureSearchSyntax.All}(x {Separators.ArrowFunction} x {AzureSearchSyntax.NotEqual} 'Example Tag')"));
+        }
+
+        [Fact]
+        public void Should_Return_AllQuery_With_WrappedNotOperator()
+        {
+            var result = _azureSearchBuilder.Query(model => !model.Tags.All(x => x != "Example Tag")).Build();
+            result.ShouldSatisfyAllConditions(nameof(AzureSearchBuilderTests),
+                () => result.Filters.ShouldNotBeNull(),
+                () => result.Filters.ShouldBe($"{AzureSearchSyntax.Not} ({nameof(ExampleTestModel.Tags)}/{AzureSearchSyntax.All}(x {Separators.ArrowFunction} x {AzureSearchSyntax.NotEqual} 'Example Tag'))"));
         }
     }
 
@@ -168,8 +187,7 @@ public class AzureSearchBuilderTests : IClassFixture<AzureSearchBuilder<ExampleT
         public void Should_Call_DateTimeNowWitSubFunction()
         {
             var now = DateTimeOffset.UtcNow;
-            var tomorrow = now.AddDays(2).AddDays(2);
-            var futureDateTime = $"{tomorrow:O}";
+            var futureDateTime = $"{now.AddDays(2).AddDays(2):O}";
 
             var result = _azureSearchBuilder.Query(model => model.PublishedAt >= DateTimeOffset.UtcNow.AddDays(2).AddDays(2)).Build();
             result.ShouldSatisfyAllConditions(nameof(AzureSearchBuilderTests),
@@ -185,7 +203,7 @@ public class AzureSearchBuilderTests : IClassFixture<AzureSearchBuilder<ExampleT
         }
 
         [Fact]
-        public void Should_Nested_Any()
+        public void Should_Return_NestedAnyQuery()
         {
             var result = _azureSearchBuilder.Query(model => model.NestedItems.Any(nI => nI.Name == "Name")).Build();
             result.ShouldSatisfyAllConditions(nameof(AzureSearchBuilderTests),
@@ -194,7 +212,7 @@ public class AzureSearchBuilderTests : IClassFixture<AzureSearchBuilder<ExampleT
         }
 
         [Fact]
-        public void Should_Nested_All()
+        public void Should_Return_NestedAllQuery()
         {
             var result = _azureSearchBuilder.Query(model => model.NestedItems.All(nI => nI.Name == "Name")).Build();
             result.ShouldSatisfyAllConditions(nameof(AzureSearchBuilderTests),
