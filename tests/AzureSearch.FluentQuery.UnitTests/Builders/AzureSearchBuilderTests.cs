@@ -220,4 +220,29 @@ public class AzureSearchBuilderTests : IClassFixture<AzureSearchBuilder<ExampleT
                 () => result.Filters.ShouldStartWith($"{nameof(ExampleTestModel.NestedItems)}/{AzureSearchSyntax.All}(nI {Separators.ArrowFunction} {nameof(SubExampleItemTest.Name)} {AzureSearchSyntax.Equal} 'Name')"));
         }
     }
+
+    public class AzureSearchFunctions : AzureSearchBuilderTests
+    {
+        public AzureSearchFunctions(AzureSearchBuilder<ExampleTestModel> azureSearchBuilder) : base(azureSearchBuilder)
+        {
+        }
+
+        [Fact]
+        public void Should_Return_SearchInQuery()
+        {
+            var result = _azureSearchBuilder.Query(model => model.Tags.Any(tag => EnumerableExtensions.SearchIn(tag, new[] { "tag1", "tag2" }))).Build();
+            result.ShouldSatisfyAllConditions(nameof(AzureSearchBuilderTests),
+                () => result.Filters.ShouldNotBeNull(),
+                () => result.Filters.ShouldStartWith($"{nameof(ExampleTestModel.Tags)}/{AzureSearchSyntax.Any}(tag {Separators.ArrowFunction} {AzureSearchSyntax.SearchIn}(tag, 'tag1, tag2'))"));
+        }
+
+        [Fact]
+        public void Should_SearchIn_With_ExtensionMethod()
+        {
+            var result = _azureSearchBuilder.Query(model => model.Tags.Any(tag => tag.SearchIn(new[] { "tag1", "tag2" }))).Build();
+            result.ShouldSatisfyAllConditions(nameof(AzureSearchBuilderTests),
+                () => result.Filters.ShouldNotBeNull(),
+                () => result.Filters.ShouldStartWith($"{nameof(ExampleTestModel.Tags)}/{AzureSearchSyntax.Any}(tag {Separators.ArrowFunction} {AzureSearchSyntax.SearchIn}(tag, 'tag1, tag2'))"));
+        }
+    }
 }

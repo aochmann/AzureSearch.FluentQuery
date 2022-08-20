@@ -3,6 +3,7 @@ namespace AzureSearch.FluentQuery.Visitors;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using AzureSearch.FluentQuery.Extensions;
 using Constants;
 
 public class AzureSearchVisitor : ExpressionVisitor
@@ -209,6 +210,25 @@ public class AzureSearchVisitor : ExpressionVisitor
         return node;
     }
 
+    protected override Expression VisitNewArray(NewArrayExpression node)
+    {
+        Out("'");
+
+        var values = node.Expressions
+            .Select(item => {
+
+                return item is ConstantExpression constantExpression
+                    ? constantExpression!.Value
+                    : null;
+            })
+            .Where(x => x is not null)
+            .ToArray();
+
+            Out(string.Join(Separators.Comma + Separators.Space, values));
+        Out("'");
+        return node;
+    }
+
     protected override Expression VisitMethodCall(MethodCallExpression node)
     {
         if (node.NodeType == ExpressionType.Call)
@@ -239,6 +259,24 @@ public class AzureSearchVisitor : ExpressionVisitor
                 var dateTimeOffsetFunc = Expression.Lambda<Func<DateTimeOffset>>(node).Compile();
                 var dateValue = dateTimeOffsetFunc();
                 Visit(Expression.Constant(dateValue));
+                return node;
+            }
+
+            if (node.Method.Name.Equals(nameof(EnumerableExtensions.SearchIn)))
+            {
+                Out(AzureSearchSyntax.SearchIn);
+                Out(Separators.OpenParenthesis);
+
+                var parameterArg = node.Arguments.FirstOrDefault();
+                var compareArg = node.Arguments.Skip(1).FirstOrDefault();
+
+                Visit(parameterArg);
+
+                Out(Separators.Comma);
+                Out(Separators.Space);
+                Visit(compareArg);
+
+                Out(Separators.CloseParenthesis);
                 return node;
             }
         }

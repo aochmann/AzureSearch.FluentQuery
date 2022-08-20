@@ -14,4 +14,5 @@ public static class AzureSearchSyntax
     public const string Any = "any";
     public const string All = "all";
     public const string Null = "null";
+    public const string SearchIn = "search.in";
 }
