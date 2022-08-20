@@ -298,5 +298,59 @@ public class AzureSearchBuilderTests : IClassFixture<AzureSearchBuilder<ExampleT
                 () => result.Filters.ShouldNotBeNull(),
                 () => result.Filters.ShouldStartWith($"{AzureSearchSyntax.SearchIsMatch}('{nameof(ExampleTestModel.Name)}', '{nameof(ExampleTestModel.Name)}, {nameof(ExampleTestModel.Number)}', '{nameof(Enums.QueryType.Full)}', '{nameof(Enums.SearchMode.Any)}')"));
         }
+
+        [Fact]
+        public void Should_Return_SearchIsMatchScoringQuery_With_SearchOnly()
+        {
+            var result = _azureSearchBuilder.Query(model => EnumerableExtensions.SearchIsMatchScoring<ExampleTestModel>(nameof(model.Name))).Build();
+            result.ShouldSatisfyAllConditions(nameof(AzureSearchBuilderTests),
+                () => result.Filters.ShouldNotBeNull(),
+                () => result.Filters.ShouldStartWith($"{AzureSearchSyntax.SearchIsMatchScoring}('{nameof(ExampleTestModel.Name)}')"));
+        }
+
+        [Fact]
+        public void Should_Return_SearchIsMatchScoringQuery_With_SearchFields()
+        {
+            var result = _azureSearchBuilder.Query(model => EnumerableExtensions.SearchIsMatchScoring<ExampleTestModel>(nameof(model.Name), x => x.Name, x => x.Number)).Build();
+            result.ShouldSatisfyAllConditions(nameof(AzureSearchBuilderTests),
+                () => result.Filters.ShouldNotBeNull(),
+                () => result.Filters.ShouldStartWith($"{AzureSearchSyntax.SearchIsMatchScoring}('{nameof(ExampleTestModel.Name)}', '{nameof(ExampleTestModel.Name)}, {nameof(ExampleTestModel.Number)}')"));
+        }
+
+        [Fact]
+        public void Should_Return_SearchIsMatchScoringQuery_With_QueryType_Full()
+        {
+            var result = _azureSearchBuilder.Query(model => EnumerableExtensions.SearchIsMatchScoring<ExampleTestModel>(nameof(model.Name), new Func<ExampleTestModel, object>[] { x => x.Name, x => x.Number }, Enums.QueryType.Full)).Build();
+            result.ShouldSatisfyAllConditions(nameof(AzureSearchBuilderTests),
+                () => result.Filters.ShouldNotBeNull(),
+                () => result.Filters.ShouldStartWith($"{AzureSearchSyntax.SearchIsMatchScoring}('{nameof(ExampleTestModel.Name)}', '{nameof(ExampleTestModel.Name)}, {nameof(ExampleTestModel.Number)}', '{nameof(Enums.QueryType.Full)}')"));
+        }
+
+        [Fact]
+        public void Should_Return_SearchIsMatchScoringQuery_With_QueryType_Simple()
+        {
+            var result = _azureSearchBuilder.Query(model => EnumerableExtensions.SearchIsMatchScoring<ExampleTestModel>(nameof(model.Name), new Func<ExampleTestModel, object>[] { x => x.Name, x => x.Number }, Enums.QueryType.Simple)).Build();
+            result.ShouldSatisfyAllConditions(nameof(AzureSearchBuilderTests),
+                () => result.Filters.ShouldNotBeNull(),
+                () => result.Filters.ShouldStartWith($"{AzureSearchSyntax.SearchIsMatchScoring}('{nameof(ExampleTestModel.Name)}', '{nameof(ExampleTestModel.Name)}, {nameof(ExampleTestModel.Number)}', '{nameof(Enums.QueryType.Simple)}')"));
+        }
+
+        [Fact]
+        public void Should_Return_SearchIsMatchScoringQuery_With_SearchMode_All()
+        {
+            var result = _azureSearchBuilder.Query(model => EnumerableExtensions.SearchIsMatchScoring<ExampleTestModel>(nameof(model.Name), new Func<ExampleTestModel, object>[] { x => x.Name, x => x.Number }, Enums.QueryType.Full, Enums.SearchMode.All)).Build();
+            result.ShouldSatisfyAllConditions(nameof(AzureSearchBuilderTests),
+                () => result.Filters.ShouldNotBeNull(),
+                () => result.Filters.ShouldStartWith($"{AzureSearchSyntax.SearchIsMatchScoring}('{nameof(ExampleTestModel.Name)}', '{nameof(ExampleTestModel.Name)}, {nameof(ExampleTestModel.Number)}', '{nameof(Enums.QueryType.Full)}', '{nameof(Enums.SearchMode.All)}')"));
+        }
+
+        [Fact]
+        public void Should_Return_SearchIsMatchScoringQuery_With_SearchMode_Any()
+        {
+            var result = _azureSearchBuilder.Query(model => EnumerableExtensions.SearchIsMatchScoring<ExampleTestModel>(nameof(model.Name), new Func<ExampleTestModel, object>[] { x => x.Name, x => x.Number }, Enums.QueryType.Full, Enums.SearchMode.Any)).Build();
+            result.ShouldSatisfyAllConditions(nameof(AzureSearchBuilderTests),
+                () => result.Filters.ShouldNotBeNull(),
+                () => result.Filters.ShouldStartWith($"{AzureSearchSyntax.SearchIsMatchScoring}('{nameof(ExampleTestModel.Name)}', '{nameof(ExampleTestModel.Name)}, {nameof(ExampleTestModel.Number)}', '{nameof(Enums.QueryType.Full)}', '{nameof(Enums.SearchMode.Any)}')"));
+        }
     }
 }

@@ -16,4 +16,5 @@ public static class AzureSearchSyntax
     public const string Null = "null";
     public const string SearchIn = "search.in";
     public const string SearchIsMatch = "search.ismatch";
+    public const string SearchIsMatchScoring = "search.ismatchscoring";
 }

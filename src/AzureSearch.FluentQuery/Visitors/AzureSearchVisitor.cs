@@ -296,9 +296,13 @@ public class AzureSearchVisitor : ExpressionVisitor
                 return node;
             }
 
-            if (node.Method.Name.Equals(nameof(EnumerableExtensions.SearchIsMatch)))
+            if (node.Method.Name.Equals(nameof(EnumerableExtensions.SearchIsMatch))
+                || node.Method.Name.Equals(nameof(EnumerableExtensions.SearchIsMatchScoring)))
             {
-                Out(AzureSearchSyntax.SearchIsMatch);
+                Out(node.Method.Name.Equals(nameof(EnumerableExtensions.SearchIsMatch))
+                    ? AzureSearchSyntax.SearchIsMatch
+                    : AzureSearchSyntax.SearchIsMatchScoring);
+
                 Out(Separators.OpenParenthesis);
 
                 var searchArg = node.Arguments.FirstOrDefault();
